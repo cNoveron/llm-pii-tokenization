@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Last Will and Testament</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 14pt;
+            line-height: 1.5;
+            margin: 40px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .signature-block {
+            margin-top: 50px;
+        }
+        .signature-line {
+            width: 300px;
+            border-bottom: 1px solid black;
+            margin-top: 40px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>LAST WILL AND TESTAMENT OF {{.TestatorName}}</h1>
+<p>
+    I, <strong>{{.TestatorName}}</strong>, presently of {{.City}}, {{.State}}, declare that this is my Last Will and Testament.
+</p>
+
+<h2>PRELIMINARY DECLARATIONS</h2>
+
+<h3>Prior Wills and Codicils</h3>
+<p>1. I revoke all prior Wills and Codicils.</p>
+
+<h3>Marital Status</h3>
+<p>2. I am married to <strong>{{.SpouseName}}</strong> (my "Spouse").</p>
+
+<h3>Current Children</h3>
+<p>3. I have the following living children:</p>
+<ul>
+    {{range .Children}}
+    <li><strong>{{.}}</strong></li>
+    {{end}}
+</ul>
+<p>
+    4. The term 'child' or 'children' as used in this Will includes the above listed children and any children of mine that are subsequently born or legally adopted.
+</p>
+
+<h2>EXECUTOR</h2>
+<p>
+    5. I appoint my Spouse, <strong>{{.SpouseName}}</strong>, as the sole Executor of this Will. Should she be unable or unwilling to serve, I appoint <strong>{{.AlternateExecutor}}</strong> as the alternate Executor.
+</p>
+
+<h2>DISPOSITION OF ESTATE</h2>
+<h3>Specific Bequests</h3>
+<p>
+    6. My specific bequests are as follows:
+</p>
+<ul>
+    {{range .Bequests}}
+    <li>I give and bequeath the sum of <strong>{{.Amount}}</strong> to <strong>{{.Beneficiary}}</strong>.</li>
+    {{end}}
+</ul>
+
+<h3>Distribution of Residue</h3>
+<p>
+    7. The remainder of my estate, valued at approximately {{.EstateValue}}, shall be divided equally between my children.
+</p>
+<p>
+    8. My primary residence shall pass to my wife <strong>{{.SpouseName}}</strong> for her lifetime.
+</p>
+
+<div class="signature-block">
+    <p>IN WITNESS WHEREOF, I have signed my name on this the {{.Date}}.</p>
+    <div class="signature-line"></div>
+    <p><strong>{{.TestatorName}} (Testator) Signature</strong></p>
+</div>
+
+</body>
+</html>

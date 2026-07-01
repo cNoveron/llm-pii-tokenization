@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trustate — Document Intake Assistant</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    header {
+      background-color: #1a5276;
+      color: white;
+      padding: 1rem 2rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: row;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    #left-panel {
+      flex: 0 0 35%;
+    }
+
+    #right-panel {
+      flex: 1;
+    }
+
+    @media (max-width: 640px) {
+      #container {
+        flex-direction: column;
+      }
+
+      #left-panel {
+        flex: 1 1 100%;
+      }
+    }
+
+    button {
+      background-color: #1a5276;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 4px;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      background-color: white;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    #drop-zone.dragover {
+      background-color: #e8f4f8;
+      border-color: #1a5276;
+    }
+
+    #drop-zone label {
+      color: #1a5276;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background-color: white;
+      font-size: 0.85rem;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #1a5276;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    #status.error {
+      color: #d32f2f;
+    }
+
+    input[type="text"] {
+      padding: 0.5rem;
+      width: calc(100% - 100px);
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    #chat-thread {
+      height: 460px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fafafa;
+    }
+
+    .message.system {
+      align-self: flex-start;
+      background: #f0f0f0;
+      border: 1px dashed #bbb;
+      border-radius: 6px;
+      padding: 10px 14px;
+      max-width: 90%;
+      font-size: 0.88em;
+      color: #555;
+    }
+
+    .message.context {
+      align-self: flex-start;
+      background: #f7f7f0;
+      border: 1px solid #ddd;
+      border-left: 3px solid #aaa;
+      border-radius: 6px;
+      padding: 10px 14px;
+      max-width: 90%;
+      font-size: 0.85em;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .truncation-notice {
+      display: block;
+      margin-top: 6px;
+      font-style: italic;
+      color: #999;
+      font-size: 0.9em;
+      font-family: sans-serif;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: #1a5276;
+      color: white;
+      border-radius: 12px 12px 2px 12px;
+      padding: 10px 14px;
+      max-width: 70%;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: white;
+      border: 1px solid #ddd;
+      border-left: 3px solid #1a5276;
+      border-radius: 6px;
+      padding: 10px 14px;
+      max-width: 90%;
+    }
+
+    .block-label {
+      font-size: 0.7em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    mark.pii-token {
+      background: #fef3cd;
+      border: 1px solid #f0ad4e;
+      border-radius: 3px;
+      padding: 0 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+      color: #333;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #chat-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    #question-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95em;
+      width: auto;
+    }
+
+    #ask-btn {
+      white-space: nowrap;
+    }
+
+    #toggle-pii {
+      font-size: 0.85em;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+
+    #suggestions-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 6px 0;
+      margin-bottom: 6px;
+    }
+
+    #suggestions-label {
+      font-size: 0.75em;
+      color: #888;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+
+    .suggestion-chip {
+      white-space: nowrap;
+      padding: 5px 12px;
+      border: 1px solid #1a5276;
+      border-radius: 16px;
+      background: white;
+      color: #1a5276;
+      font-size: 0.82em;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .suggestion-chip:hover {
+      background: #1a5276;
+      color: white;
+    }
+
+    @keyframes bounce-left {
+      0%, 100% { transform: translate(0, -50%); }
+      50% { transform: translate(-5px, -50%); }
+    }
+
+    #app-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+
+    #will-sample-tooltip {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 20px;
+      background-color: #9c27b0;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      white-space: nowrap;
+      z-index: 1002;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      font-weight: normal;
+      pointer-events: none;
+    }
+
+    #will-sample-pointer {
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-right: 12px solid #9c27b0;
+      animation: bounce-left 1s infinite;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app-overlay" style="display: none;"></div>
+  <header style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Trustate — Document Intake Assistant</h1>
+    <button id="btn-rationale" style="background: transparent; border: 1px solid white; color: white; padding: 6px 12px; font-size: 0.9em;">Rationale</button>
+  </header>
+
+  <div id="container">
+    <div id="left-panel">
+      <div id="sample-buttons">
+        <button id="btn-will" style="position: relative; z-index: 1001;">
+          Load Will Sample
+          <div id="will-sample-tooltip" style="display: none;">
+            <div id="will-sample-pointer"></div>
+            Quickly start by loading a sample will document
+          </div>
+        </button>
+        <button id="btn-poa">Load POA Sample</button>
+      </div>
+
+      <p>— or —</p>
+
+      <div id="drop-zone">
+        <p>Drag a PDF here or <label for="file-input">browse</label></p>
+        <input type="file" id="file-input" accept=".pdf" hidden>
+      </div>
+
+      <p id="status"></p>
+
+      <iframe id="pdf-viewer"
+        style="width: 100%; height: 500px; margin-top: 1rem; border: 1px solid #ccc; border-radius: 4px;"
+        hidden></iframe>
+    </div>
+
+    <div id="right-panel">
+      <section id="qa-section">
+        <div id="chat-header">
+          <h2>Conversation</h2>
+          <button id="toggle-pii" data-mode="tokenized">🔒 Show real data</button>
+        </div>
+        <div id="model-selector"
+          style="display: flex; gap: 12px; margin-bottom: 12px; position: relative; align-items: center;">
+          <span style="font-size: 0.9em; font-weight: 600; color: #555;">AI provider infrastructure:</span>
+          <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <input type="radio" name="model" value="vertex" checked> Google Vertex AI
+          </label>
+          <div style="position: relative; display: inline-block;">
+            <label style="font-size: 0.9em; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <input type="radio" name="model" value="mistral"> Mistral AI Studio
+            </label>
+            <div id="mistral-tooltip"
+              style="display: block; position: absolute; top: 100%; left: -20px; margin-top: 8px; width: 320px; background: white; border: 1px solid #ccc; border-radius: 6px; padding: 16px 32px 12px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; box-sizing: border-box;">
+              <button id="close-mistral-tooltip" style="position: absolute; top: 8px; right: 8px; background: #333; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; padding: 0; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Close">&times;</button>
+              <div
+                style="position: absolute; top: -6px; left: 40px; width: 10px; height: 10px; background: white; border-top: 1px solid #ccc; border-left: 1px solid #ccc; transform: rotate(45deg);">
+              </div>
+              <p style="margin: 0 0 10px 0; font-size: 0.9em; color: #333; line-height: 1.4;">Mistral, as a French
+                company subject to EU law directly, scores significantly higher on strict GDPR risk assessments than
+                Google Vertex AI for EU law firms.</p>
+              <p style="margin: 0; font-size: 0.8em; color: #777; font-style: italic;">*both Vertex and Mistral are
+                being mocked by Claude and Gemini.</p>
+            </div>
+          </div>
+        </div>
+        <div id="chat-thread">
+          <div class="message system">
+            <span class="block-label">Welcome</span>
+            <p class="message-text">Please upload a document or load a sample on the left to begin querying information.
+            </p>
+          </div>
+        </div>
+        <div id="chat-input-row">
+          <input type="text" id="question-input" placeholder="Ask a question…">
+          <button id="ask-btn">Send</button>
+        </div>
+        <div id="suggestions-label" hidden>Suggested:</div>
+        <div id="suggestions-bar" hidden></div>
+      </section>
+
+      <section id="facts-section" hidden>
+        <h2 style="margin-top: 2rem;">Extracted Facts</h2>
+        <table id="facts-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </section>
+  </div>
+
+  <div id="modal-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div id="modal-content" style="background: white; padding: 2.5rem; border-radius: 8px; max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative; color: #333; line-height: 1.5; font-size: 0.95rem;">
+      <button id="close-modal" style="position: absolute; top: 1rem; right: 1rem; background: #333; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">&times;</button>
+      <h2 style="margin-top: 0; margin-bottom: 1.5rem; color: #1a5276;">Acknowledgements and Rationale</h2>
+      
+      <h3 style="color: #444; margin-top: 1.5rem;">Are Vertex AI or Mistral AI Studio GDPR-compliant?</h3>
+      <h4 style="color: #666; margin-top: 0.5rem; font-weight: normal; font-style: italic;">Yes, with important caveats</h4>
+
+      <p>Both providers satisfy GDPR on paper. Vertex AI backs this with a formal Cloud Data Processing Addendum — data stays in your chosen region, models don't train on your prompts unless you opt in, and Google is positioned as a data processor with the customer as the controller. Mistral, headquartered in Paris, is subject to EU law directly and doesn't carry the jurisdictional baggage of a US-headquartered provider.</p>
+
+      <p>The caveat for Vertex AI is structural: Google LLC is the contracting entity, and as a Delaware C-Corp it's subject to the CLOUD Act and FISA 702. The DPA explicitly carves out Law Enforcement Requests — Google will comply with lawful US government demands and notify customers only "where legally permitted." NSL gag orders mean that notification right can be suspended indefinitely. EU Data Residency is also not on by default — it's a paid add-on. For Mistral the risk profile is lower, but their enterprise data processing terms still warrant review before handling client PII in production.</p>
+
+      <p>The deeper point: GDPR compliance at the provider level is a necessary condition, not a sufficient one. It governs what the provider does with your data — it says nothing about whether the application is transmitting PII in the first place. That's an application-layer responsibility.</p>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 2rem 0;">
+
+      <h3 style="color: #444; margin-top: 1.5rem;">Is it worth showcasing Vertex AI or Mistral in the demo?</h3>
+      <h4 style="color: #666; margin-top: 0.5rem; font-weight: normal; font-style: italic;">TL;DR: It's not that interesting</h4>
+
+      <p>Swapping Anthropic for either provider is a one-line config change in the LLM client. The tokenization layer, the session store, the PDF extraction, the prompt structure — none of it changes. The LLM client is isolated behind a single interface. The provider is an environment variable.</p>
+
+      <p>This means the compliance conversation belongs at the provider selection stage, not at the architecture stage. If Trustate's client base includes EU law firms, the provider choice is a real decision and Mistral's jurisdictional position is a meaningful differentiator over Vertex AI. But that's independent of how the application is built — and this architecture keeps that decision open.</p>
+    </div>
+  </div>
+
+  <script>
+    const btnWill = document.getElementById('btn-will');
+    const btnPoa = document.getElementById('btn-poa');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const statusMsg = document.getElementById('status');
+    const pdfViewer = document.getElementById('pdf-viewer');
+
+    const factsSection = document.getElementById('facts-section');
+    const factsTableBody = document.querySelector('#facts-table tbody');
+
+    const qaSection = document.getElementById('qa-section');
+    const questionInput = document.getElementById('question-input');
+    const askBtn = document.getElementById('ask-btn');
+    const chatThread = document.getElementById('chat-thread');
+    const toggleBtn = document.getElementById('toggle-pii');
+    const suggestionsLabel = document.getElementById('suggestions-label');
+    const suggestionsBar = document.getElementById('suggestions-bar');
+
+    const SUGGESTED_QUESTIONS = [
+      "What real property is included in the estate, and are there co-ownership arrangements?",
+      "Are any assets held in trust and outside the probate estate?",
+      "Does the document acknowledge any outstanding debts, mortgages, or liens?",
+      "Who are the residuary beneficiaries and what share does each receive?",
+      "Are there any conditions or contingencies attached to any bequest?",
+      "Is there a no-contest clause?",
+      "What powers are granted to the executor?",
+      "Is there a pour-over will that directs assets into a living trust?",
+      "Are there any special needs trust provisions?",
+      "Does the document reference a marital deduction or QTIP trust?",
+    ];
+
+    function renderSuggestions() {
+      if (!suggestionsBar) return;
+      suggestionsBar.innerHTML = '';
+      SUGGESTED_QUESTIONS.forEach(q => {
+        const chip = document.createElement('button');
+        chip.className = 'suggestion-chip';
+        chip.textContent = q;
+        chip.addEventListener('click', () => {
+          questionInput.value = q;
+          askQuestion();
+        });
+        suggestionsBar.appendChild(chip);
+      });
+      suggestionsBar.hidden = false;
+      if (suggestionsLabel) suggestionsLabel.hidden = false;
+    }
+
+    let sessionId = null;
+
+    function setState(state, msg = '') {
+      statusMsg.className = '';
+      statusMsg.textContent = msg;
+
+      if (state === 'ERROR') {
+        statusMsg.classList.add('error');
+      }
+
+      switch (state) {
+        case 'IDLE':
+          sessionId = null;
+          btnWill.disabled = false;
+          btnPoa.disabled = false;
+          fileInput.disabled = false;
+          factsSection.hidden = true;
+          qaSection.hidden = false;
+          pdfViewer.hidden = true;
+          pdfViewer.src = '';
+          askBtn.disabled = true;
+          questionInput.disabled = true;
+          if (suggestionsLabel) suggestionsLabel.hidden = true;
+          if (suggestionsBar) suggestionsBar.hidden = true;
+          break;
+        case 'LOADING':
+          btnWill.disabled = true;
+          btnPoa.disabled = true;
+          fileInput.disabled = true;
+          askBtn.disabled = true;
+          questionInput.disabled = true;
+          statusMsg.textContent = 'Uploading…';
+          break;
+        case 'READY':
+          btnWill.disabled = false;
+          btnPoa.disabled = false;
+          fileInput.disabled = false;
+          factsSection.hidden = false;
+          qaSection.hidden = false;
+          pdfViewer.hidden = false;
+          askBtn.disabled = false;
+          questionInput.disabled = false;
+          statusMsg.textContent = 'Ready.';
+          break;
+        case 'ASKING':
+          askBtn.disabled = true;
+          questionInput.disabled = true;
+          break;
+        case 'ERROR':
+          btnWill.disabled = false;
+          btnPoa.disabled = false;
+          fileInput.disabled = false;
+          askBtn.disabled = !sessionId;
+          questionInput.disabled = !sessionId;
+          break;
+      }
+    }
+
+    function renderFacts(facts) {
+      factsTableBody.innerHTML = '';
+      if (!facts || facts.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 2;
+        td.textContent = 'No facts extracted.';
+        tr.appendChild(td);
+        factsTableBody.appendChild(tr);
+        return;
+      }
+      for (const fact of facts) {
+        const tr = document.createElement('tr');
+        const tdLabel = document.createElement('td');
+        tdLabel.textContent = fact.label;
+        const tdValue = document.createElement('td');
+        tdValue.textContent = fact.value;
+        tr.appendChild(tdLabel);
+        tr.appendChild(tdValue);
+        factsTableBody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function highlightTokens(text) {
+      if (!text) return '';
+      return escapeHtml(text).replace(
+        /\{\{[A-Z_]+_\d+\}\}/g,
+        m => `<mark class="pii-token">${m}</mark>`
+      );
+    }
+
+    async function seedChatThread(uploadData) {
+      chatThread.innerHTML = '';
+
+      const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+      function createSpinner(label) {
+        const div = document.createElement('div');
+        div.className = 'message system';
+        div.innerHTML = `
+          <span class="block-label">${label}</span>
+          <div class="spinner" style="width:16px; height:16px; border-width:3px; margin: 4px 0 0 0;"></div>
+        `;
+        chatThread.appendChild(div);
+        chatThread.scrollTop = chatThread.scrollHeight;
+        return div;
+      }
+
+      const sysSpinner = createSpinner('Sending System Prompt...');
+      await wait(1500);
+
+      sysSpinner.innerHTML = `
+        <span class="block-label">System Prompt</span>
+        <p class="message-text">${escapeHtml(uploadData.system_prompt)}</p>
+      `;
+      chatThread.scrollTop = chatThread.scrollHeight;
+
+      const ctxSpinner = createSpinner('Sending Document Context...');
+      await wait(1500);
+
+      const TRUNCATE_AT = 400;
+      const raw = uploadData.tokenized_doc || '';
+      const isTruncated = raw.length > TRUNCATE_AT;
+      const truncated = isTruncated
+        ? raw.slice(0, raw.lastIndexOf(' ', TRUNCATE_AT))
+        : raw;
+
+      ctxSpinner.className = 'message context';
+      ctxSpinner.innerHTML = `
+        <span class="block-label">Document Context (sent to LLM)</span>
+        <p class="tokenized">${highlightTokens(truncated)}${isTruncated
+          ? '<br><em class="truncation-notice">— truncated · full document sent to LLM —</em>'
+          : ''}</p>
+      `;
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function appendUserMessage(question, tokenizedQuestion) {
+      const mode = toggleBtn.dataset.mode;
+      const div = document.createElement('div');
+      div.className = 'message user';
+      div.innerHTML = `
+        <p class="tokenized ${mode === 'detokenized' ? 'hidden' : ''}">${highlightTokens(tokenizedQuestion)}</p>
+        <p class="detokenized ${mode === 'tokenized' ? 'hidden' : ''}">${escapeHtml(question)}</p>
+      `;
+      chatThread.appendChild(div);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function appendAssistantMessage(data) {
+      const mode = toggleBtn.dataset.mode;
+      const div = document.createElement('div');
+      div.className = 'message assistant';
+      div.innerHTML = `
+        <span class="block-label">Response</span>
+        <p class="tokenized ${mode === 'detokenized' ? 'hidden' : ''}">${highlightTokens(data.tokenized_answer)}</p>
+        <p class="detokenized ${mode === 'tokenized' ? 'hidden' : ''}">${escapeHtml(data.answer)}</p>
+      `;
+      chatThread.appendChild(div);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    async function uploadFile(file) {
+      if (file.type !== 'application/pdf') {
+        setState('ERROR', 'Please upload a PDF file.');
+        return;
+      }
+      setState('LOADING');
+      try {
+        const fileUrl = URL.createObjectURL(file);
+        pdfViewer.src = fileUrl;
+
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch('/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        sessionId = data.session_id;
+        renderFacts(data.facts);
+
+        statusMsg.textContent = 'Initializing chat...';
+        pdfViewer.hidden = false;
+        factsSection.hidden = false;
+        qaSection.hidden = false;
+
+        await seedChatThread(data);
+
+        renderSuggestions();
+        questionInput.value = '';
+        setState('READY');
+      } catch (err) {
+        setState('ERROR', err.message);
+      }
+    }
+
+    async function loadSample(name) {
+      setState('LOADING');
+      try {
+        const res = await fetch(`/sample/${name}`);
+        if (!res.ok) throw new Error(`Failed to load sample: ${res.statusText}`);
+        const blob = await res.blob();
+        const file = new File([blob], `${name}.pdf`, { type: 'application/pdf' });
+        await uploadFile(file);
+      } catch (err) {
+        setState('ERROR', err.message);
+      }
+    }
+
+    async function askQuestion() {
+      const question = questionInput.value.trim();
+      if (!question || !sessionId) return;
+
+      setState('ASKING');
+      try {
+        const res = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, question: question })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Question failed');
+        appendUserMessage(question, data.tokenized_prompt);
+        appendAssistantMessage(data);
+        questionInput.value = '';
+        setState('READY');
+      } catch (err) {
+        setState('ERROR', err.message);
+      }
+    }
+
+    const appOverlay = document.getElementById('app-overlay');
+    const willSampleTooltip = document.getElementById('will-sample-tooltip');
+    
+    function dismissOnboarding() {
+      if (appOverlay) appOverlay.style.display = 'none';
+      if (willSampleTooltip) willSampleTooltip.style.display = 'none';
+      if (btnWill) btnWill.style.zIndex = 'auto';
+    }
+
+    if (appOverlay) {
+      appOverlay.addEventListener('click', dismissOnboarding);
+    }
+
+    btnWill.addEventListener('click', () => {
+      dismissOnboarding();
+      loadSample('will');
+    });
+    btnPoa.addEventListener('click', () => loadSample('poa'));
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        uploadFile(e.target.files[0]);
+      }
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        uploadFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    askBtn.addEventListener('click', askQuestion);
+    questionInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') askQuestion();
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      const next = toggleBtn.dataset.mode === 'tokenized' ? 'detokenized' : 'tokenized';
+      toggleBtn.dataset.mode = next;
+      toggleBtn.textContent = next === 'tokenized' ? '🔒 Show real data' : '🔓 Hide real data';
+
+      document.querySelectorAll('.message.user .tokenized, .message.assistant .tokenized')
+        .forEach(el => el.classList.toggle('hidden', next === 'detokenized'));
+      document.querySelectorAll('.message.user .detokenized, .message.assistant .detokenized')
+        .forEach(el => el.classList.toggle('hidden', next === 'tokenized'));
+    });
+
+    setState('IDLE');
+
+    const modelSel = document.getElementById('model-selector');
+    const mistralTt = document.getElementById('mistral-tooltip');
+    const closeMistralTt = document.getElementById('close-mistral-tooltip');
+    let mistralTtDismissed = false;
+
+    if (modelSel) {
+      modelSel.addEventListener('mouseenter', () => {
+        if (!mistralTtDismissed && mistralTt) {
+          mistralTt.style.display = 'block';
+        }
+      });
+    }
+
+    if (closeMistralTt) {
+      closeMistralTt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        mistralTtDismissed = true;
+        if (mistralTt) mistralTt.style.display = 'none';
+      });
+    }
+
+    const btnRationale = document.getElementById('btn-rationale');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const closeModal = document.getElementById('close-modal');
+    let onboardingShown = false;
+
+    if (btnRationale && modalOverlay && closeModal) {
+      btnRationale.addEventListener('click', () => {
+        modalOverlay.style.display = 'flex';
+      });
+
+      function handleModalClose() {
+        modalOverlay.style.display = 'none';
+        if (!onboardingShown) {
+          onboardingShown = true;
+          if (appOverlay) appOverlay.style.display = 'block';
+          if (willSampleTooltip) willSampleTooltip.style.display = 'flex';
+        }
+      }
+
+      closeModal.addEventListener('click', handleModalClose);
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+          handleModalClose();
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
