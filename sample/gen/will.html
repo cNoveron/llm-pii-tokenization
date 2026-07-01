@@ -54,24 +54,51 @@
 <p>
     5. I appoint my Spouse, <strong>{{.SpouseName}}</strong>, as the sole Executor of this Will. Should she be unable or unwilling to serve, I appoint <strong>{{.AlternateExecutor}}</strong> as the alternate Executor.
 </p>
+<p>
+    6. <strong>Powers of Executor:</strong> I grant to my Executor full power to deal with any property, real or personal, held in my estate as freely as I might in my lifetime. This includes, but is not limited to, the power to sell, mortgage, lease, or exchange property; to invest and reinvest estate assets; and to settle, compromise, or pay any debts or claims against my estate.
+</p>
+
+<h2>DEBTS AND EXPENSES</h2>
+<p>
+    7. I direct my Executor to pay all my legally enforceable debts, expenses of my last illness, funeral expenses, and administrative expenses out of the residue of my estate as soon as practicable after my death. However, any mortgage, lien, or encumbrance on my real property shall NOT be paid off by my estate, but shall pass with the property subject to such encumbrance.
+</p>
 
 <h2>DISPOSITION OF ESTATE</h2>
-<h3>Specific Bequests</h3>
+
+<h3>Real Property</h3>
 <p>
-    6. My specific bequests are as follows:
+    8. I am a co-owner, as joint tenants with right of survivorship, with <strong>{{.CoOwner}}</strong>, of the real property located at <strong>{{.RealProperty}}</strong>. I acknowledge that this property will pass outside of probate directly to the surviving co-owner by operation of law. 
+    However, if I am the sole owner of this property at my death, I give and devise this real property to <strong>{{.SpouseName}}</strong>, subject to the outstanding mortgage in the approximate amount of <strong>{{.MortgageAmount}}</strong>, which the beneficiary shall assume.
+</p>
+
+<h3>Specific Bequests and Contingencies</h3>
+<p>
+    9. My specific bequests are as follows:
 </p>
 <ul>
     {{range .Bequests}}
-    <li>I give and bequeath the sum of <strong>{{.Amount}}</strong> to <strong>{{.Beneficiary}}</strong>.</li>
+    <li>I give and bequeath the sum of <strong>{{.Amount}}</strong> to <strong>{{.Beneficiary}}</strong>. This bequest is strictly contingent upon <strong>{{.Beneficiary}}</strong> reaching the age of <strong>{{$.ContingencyAge}}</strong> years old. If they do not reach this age, this bequest shall lapse and fall into the residue of my estate.</li>
     {{end}}
 </ul>
 
-<h3>Distribution of Residue</h3>
+<h3>Special Needs Trust</h3>
 <p>
-    7. The remainder of my estate, valued at approximately {{.EstateValue}}, shall be divided equally between my children.
+    10. I direct that any share of my estate passing to <strong>{{.SpecialNeedsBeneficiary}}</strong> shall not be distributed outright, but shall be held in a Supplemental Needs Trust for their benefit, intended to supplement, but not supplant, any government benefits they may receive.
 </p>
+
+<h3>Marital Deduction (QTIP) Provisions</h3>
 <p>
-    8. My primary residence shall pass to my wife <strong>{{.SpouseName}}</strong> for her lifetime.
+    11. It is my intention that any property passing to my Spouse under this Will shall qualify for the marital deduction under Section 2056 of the Internal Revenue Code. My Executor is authorized to make a Qualified Terminable Interest Property (QTIP) election for any such property held in trust for my Spouse.
+</p>
+
+<h3>Distribution of Residue and Pour-Over Provision</h3>
+<p>
+    12. I give, devise, and bequeath all the rest, residue, and remainder of my estate, valued at approximately {{.EstateValue}}, to the Trustee of <strong>{{.LivingTrustName}}</strong>, established on <strong>{{.LivingTrustDate}}</strong>. These assets shall be added to the principal of said Trust and administered and distributed in accordance with its terms.
+</p>
+
+<h2>NO-CONTEST CLAUSE</h2>
+<p>
+    13. If any beneficiary under this Will, or any trust created by this Will, contests or attacks this Will or any of its provisions in any court, any share or interest given to that contesting beneficiary is revoked and shall be disposed of in the same manner provided herein as if that contesting beneficiary had predeceased me without issue.
 </p>
 
 <div class="signature-block">

@@ -16,13 +16,20 @@ import (
 
 // WillData holds the dynamic information to inject into the Will template.
 type WillData struct {
-	TestatorName      string
-	City              string
-	State             string
-	SpouseName        string
-	Children          []string
-	AlternateExecutor string
-	Bequests          []struct {
+	TestatorName            string
+	City                    string
+	State                   string
+	SpouseName              string
+	Children                []string
+	AlternateExecutor       string
+	RealProperty            string
+	CoOwner                 string
+	MortgageAmount          string
+	LivingTrustName         string
+	LivingTrustDate         string
+	SpecialNeedsBeneficiary string
+	ContingencyAge          string
+	Bequests                []struct {
 		Amount      string
 		Beneficiary string
 	}
@@ -78,12 +85,19 @@ func main() {
 func generateWillPDF(outDir string) {
 	// Our mock data for the Will
 	data := WillData{
-		TestatorName:      "John Smith",
-		City:              "San Francisco",
-		State:             "California",
-		SpouseName:        "Margaret Smith",
-		Children:          []string{"Emily Smith", "Thomas Smith"},
-		AlternateExecutor: "Robert Chen",
+		TestatorName:            "John Smith",
+		City:                    "San Francisco",
+		State:                   "California",
+		SpouseName:              "Margaret Smith",
+		Children:                []string{"Emily Smith", "Thomas Smith"},
+		AlternateExecutor:       "Robert Chen",
+		RealProperty:            "123 Maple Street, San Francisco, CA",
+		CoOwner:                 "Margaret Smith",
+		MortgageAmount:          "$150,000",
+		LivingTrustName:         "The John and Margaret Smith Revocable Living Trust",
+		LivingTrustDate:         "January 15, 2015",
+		SpecialNeedsBeneficiary: "Thomas Smith",
+		ContingencyAge:          "25",
 		Bequests: []struct {
 			Amount      string
 			Beneficiary string
