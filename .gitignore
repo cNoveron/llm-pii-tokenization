@@ -42,3 +42,5 @@ Thumbs.db
 # Build output
 bin/
 trustate
+node_modules/
+dist/
